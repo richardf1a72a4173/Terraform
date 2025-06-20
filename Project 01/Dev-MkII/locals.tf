@@ -1,0 +1,33 @@
+# Local generated values from static variables
+
+locals {
+  env = var.environment[var.environment_tag]
+
+  resource_template = "-${var.project_tag}-${local.env}-${var.country_tag}-"
+
+  safe_basename = replace(local.resource_template, "-", "")
+
+  rg_location = var.region
+
+  hostname  = var.http_hostname == "" ? "${var.project_tag}-${local.env}-${var.country_tag}-001.${data.azurerm_dns_zone.devdns.name}" : var.http_hostname
+  hostname2 = var.http_hostname_2 == "" ? "${var.project_tag}-${local.env}-${var.country_tag}-002.${data.azurerm_dns_zone.devdns.name}" : var.http_hostname_2
+
+  targets_resource_id = [azurerm_windows_web_app.app[0].id, azurerm_windows_web_app.app[1].id, azurerm_application_gateway.ag.id, azurerm_key_vault.kv.id]
+
+  tags = {
+    "Environment"      = var.environment_tag
+    "Active Directory" = var.ad
+    "Application Name" = var.app_name
+    "Confidentiality"  = var.confidentiality
+    "Cost Centre"      = var.cost_centre
+    "Operations Team"  = var.ops_team
+    "Project"          = var.project_code
+    "Region"           = var.region
+    "Service Hours"    = var.service_hours
+    "Service Level"    = var.service_level
+    "Tooling"          = "Terraform"
+    "Deploy Date"      = time_static.time.rfc3339
+    "VNET"             = "${var.vnet_change} - ${var.vnet_subnet}"
+  }
+
+}

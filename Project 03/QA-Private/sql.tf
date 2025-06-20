@@ -1,0 +1,43 @@
+# DB Server
+
+resource "azurerm_mssql_server" "us" {
+  connection_policy                    = "Default"
+  location                             = azurerm_resource_group.us.location
+  minimum_tls_version                  = "1.2"
+  name                                 = local.mssql_name
+  outbound_network_restriction_enabled = false
+  primary_user_assigned_identity_id    = null
+  public_network_access_enabled        = false
+  resource_group_name                  = azurerm_resource_group.us.name
+  version                              = "12.0"
+  azuread_administrator {
+    azuread_authentication_only = true
+    login_username              = var.sql_login_username
+    object_id                   = var.sql_login_object_id
+    tenant_id                   = data.azuread_client_config.current.tenant_id
+  }
+
+  lifecycle {
+    ignore_changes = [tags, azuread_administrator]
+    # prevent_destroy = true
+  }
+}
+
+resource "azurerm_mssql_database" "us" {
+  count                               = 2
+  auto_pause_delay_in_minutes         = 0
+  collation                           = "SQL_Latin1_General_CP1_CI_AS"
+  create_mode                         = "Default"
+  geo_backup_enabled                  = true
+  name                                = "sql${local.resource_template}00${count.index + 1}"
+  read_replica_count                  = 0
+  read_scale                          = false
+  server_id                           = azurerm_mssql_server.us.id
+  storage_account_type                = "Local"
+  transparent_data_encryption_enabled = true
+  zone_redundant                      = false
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}

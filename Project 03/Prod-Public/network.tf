@@ -1,0 +1,202 @@
+resource "azurerm_virtual_network" "us" {
+  name                = module.naming.virtual_network.name
+  location            = azurerm_resource_group.us.location
+  resource_group_name = azurerm_resource_group.us.name
+  address_space       = [var.vnet_subnet]
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_subnet" "us" {
+  count                = 3
+  name                 = "${module.naming.subnet.name}-00${count.index + 1}"
+  resource_group_name  = azurerm_resource_group.us.name
+  virtual_network_name = azurerm_virtual_network.us.name
+  address_prefixes     = [var.snet_subnets[count.index]]
+
+  lifecycle {
+    ignore_changes = [private_endpoint_network_policies]
+  }
+
+  dynamic "delegation" {
+    for_each = count.index == 0 ? [1] : []
+
+    content {
+      name = "appservice"
+      service_delegation {
+        name = "Microsoft.Web/serverFarms"
+      }
+    }
+  }
+}
+
+resource "azurerm_application_security_group" "app" {
+  name                = "${module.naming.application_security_group.name}-app"
+  location            = azurerm_resource_group.us.location
+  resource_group_name = azurerm_resource_group.us.name
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_application_security_group" "sql" {
+  name                = "${module.naming.application_security_group.name}-sql"
+  location            = azurerm_resource_group.us.location
+  resource_group_name = azurerm_resource_group.us.name
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_network_security_group" "us" {
+  count               = 3
+  name                = "${module.naming.network_security_group.name}-00${count.index + 1}"
+  location            = azurerm_resource_group.us.location
+  resource_group_name = azurerm_resource_group.us.name
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_network_security_rule" "sql" {
+  name                       = "DenyInbound"
+  priority                   = 4000
+  direction                  = "Inbound"
+  access                     = "Deny"
+  protocol                   = "*"
+  source_port_range          = "*"
+  destination_port_range     = "*"
+  source_address_prefixes    = ["10.0.0.0/8", "192.168.0.0/16", "172.16.0.0/12"]
+  destination_address_prefix = "*"
+
+  resource_group_name         = azurerm_resource_group.us.name
+  network_security_group_name = azurerm_network_security_group.us[2].name
+}
+
+resource "azurerm_network_security_rule" "sql-inbound" {
+  name                                       = "SQLInbound"
+  priority                                   = 200
+  direction                                  = "Inbound"
+  access                                     = "Allow"
+  protocol                                   = "*"
+  source_port_range                          = "*"
+  destination_port_range                     = "1433-1434"
+  source_application_security_group_ids      = [azurerm_application_security_group.app.id]
+  destination_application_security_group_ids = [azurerm_application_security_group.sql.id]
+
+  resource_group_name         = azurerm_resource_group.us.name
+  network_security_group_name = azurerm_network_security_group.us[2].name
+}
+
+resource "azurerm_network_security_rule" "dev-sql-inbound" {
+  name                                       = "DevSQLInbound"
+  priority                                   = 210
+  direction                                  = "Inbound"
+  access                                     = "Allow"
+  protocol                                   = "*"
+  source_port_range                          = "*"
+  destination_port_range                     = "1433-1434"
+  source_address_prefixes                    = ["10.0.0.0/8", "192.168.0.0/16", "172.16.0.0/12"]
+  destination_application_security_group_ids = [azurerm_application_security_group.sql.id]
+
+  resource_group_name         = azurerm_resource_group.us.name
+  network_security_group_name = azurerm_network_security_group.us[2].name
+}
+
+resource "azurerm_network_security_rule" "app" {
+  name                       = "DenyInbound"
+  priority                   = 4000
+  direction                  = "Inbound"
+  access                     = "Deny"
+  protocol                   = "*"
+  source_port_range          = "*"
+  destination_port_range     = "*"
+  source_address_prefixes    = ["10.0.0.0/8", "192.168.0.0/16", "172.16.0.0/12"]
+  destination_address_prefix = "*"
+
+  resource_group_name         = azurerm_resource_group.us.name
+  network_security_group_name = azurerm_network_security_group.us[1].name
+}
+
+resource "azurerm_network_security_rule" "app-inbound" {
+  name                                       = "AppInbound"
+  priority                                   = 200
+  direction                                  = "Inbound"
+  access                                     = "Allow"
+  protocol                                   = "*"
+  source_port_range                          = "*"
+  destination_port_ranges                    = ["80", "443", "454", "455", "21", "990", "10001-10300", "4020", "4022", "4024", "8172", "7654", "1221"]
+  source_address_prefixes                    = ["10.0.0.0/8", "192.168.0.0/16", "172.16.0.0/12"]
+  destination_application_security_group_ids = [azurerm_application_security_group.app.id]
+
+  resource_group_name         = azurerm_resource_group.us.name
+  network_security_group_name = azurerm_network_security_group.us[1].name
+}
+
+resource "azurerm_network_security_rule" "app-outbound" {
+  name                       = "DenyInbound"
+  priority                   = 4000
+  direction                  = "Inbound"
+  access                     = "Deny"
+  protocol                   = "*"
+  source_port_range          = "*"
+  destination_port_range     = "*"
+  source_address_prefixes    = ["10.0.0.0/8", "192.168.0.0/16", "172.16.0.0/12"]
+  destination_address_prefix = "*"
+
+  resource_group_name         = azurerm_resource_group.us.name
+  network_security_group_name = azurerm_network_security_group.us[0].name
+}
+
+resource "azurerm_subnet_network_security_group_association" "us" {
+  count                     = length(azurerm_subnet.us)
+  subnet_id                 = azurerm_subnet.us[count.index].id
+  network_security_group_id = azurerm_network_security_group.us[count.index].id
+}
+
+# ASG Association
+
+resource "azurerm_private_endpoint_application_security_group_association" "sql" {
+  private_endpoint_id           = azurerm_private_endpoint.sql.id
+  application_security_group_id = azurerm_application_security_group.sql.id
+}
+
+resource "azurerm_private_endpoint_application_security_group_association" "app" {
+  private_endpoint_id           = azurerm_private_endpoint.app.id
+  application_security_group_id = azurerm_application_security_group.app.id
+}
+
+resource "azurerm_private_endpoint_application_security_group_association" "sa" {
+  private_endpoint_id           = azurerm_private_endpoint.sa.id
+  application_security_group_id = azurerm_application_security_group.app.id
+}
+
+#DNS Links
+
+resource "azurerm_private_dns_zone_virtual_network_link" "links" {
+  provider = azurerm.platform
+  for_each = var.dns_zones
+
+  name                  = "pl-${each.value.short_name}-${azurerm_virtual_network.us.name}"
+  resource_group_name   = "rg-privatedns-p-us-001"
+  private_dns_zone_name = each.value.name
+  virtual_network_id    = azurerm_virtual_network.us.id
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+#Peering for ExpressRoute
+
+resource "azurerm_virtual_hub_connection" "us" {
+  provider                  = azurerm.platform
+  name                      = "conn-${azurerm_virtual_network.us.name}"
+  virtual_hub_id            = data.azurerm_virtual_hub.us.id
+  remote_virtual_network_id = azurerm_virtual_network.us.id
+}

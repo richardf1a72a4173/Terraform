@@ -1,0 +1,144 @@
+resource "azurerm_private_endpoint" "kv" {
+  name                = "pe-kv${local.resource_template}001"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  subnet_id           = azurerm_subnet.pe.id
+
+  private_service_connection {
+    name                           = "psc-kv${local.resource_template}001"
+    private_connection_resource_id = azurerm_key_vault.kv.id
+    subresource_names              = ["vault"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "privatelink.vaultcore.azure.net"
+    private_dns_zone_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-privatedns-p-us-001/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net"]
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_private_endpoint" "sa" {
+  name                = "pe-sa${local.resource_template}001"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  subnet_id           = azurerm_subnet.pe.id
+
+  private_service_connection {
+    name                           = "psc-sa${local.resource_template}001"
+    private_connection_resource_id = azurerm_storage_account.storage.id
+    is_manual_connection           = false
+    subresource_names = [
+      "file"
+    ]
+  }
+
+  private_dns_zone_group {
+    name                 = "privatelink.file.core.windows.net"
+    private_dns_zone_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-privatedns-p-us-001/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net"]
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_private_endpoint" "app" {
+  name                = "pe-app${local.resource_template}001"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.pe.id
+
+
+  private_service_connection {
+    name                           = "psc-app${local.resource_template}001"
+    private_connection_resource_id = azurerm_linux_web_app.app.id
+    subresource_names              = ["sites"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "privatelink.azurewebsites.net"
+    private_dns_zone_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-privatedns-p-us-001/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net"]
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_private_endpoint" "redis" {
+  name                = "pe-redis${local.resource_template}001"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.pe.id
+
+
+  private_service_connection {
+    name                           = "psc-redis${local.resource_template}001"
+    private_connection_resource_id = azurerm_redis_cache.redis.id
+    subresource_names              = ["redisCache"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "privatelink.redis.cache.windows.net"
+    private_dns_zone_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-privatedns-p-us-001/providers/Microsoft.Network/privateDnsZones/privatelink.redis.cache.windows.net"]
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_private_endpoint" "acr" {
+  name                = "pe-acr${local.resource_template}001"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.pe.id
+
+
+  private_service_connection {
+    name                           = "psc-acr${local.resource_template}001"
+    private_connection_resource_id = azurerm_container_registry.myacr.id
+    subresource_names              = ["registry"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "privatelink.azurecr.io"
+    private_dns_zone_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-privatedns-p-us-001/providers/Microsoft.Network/privateDnsZones/privatelink.azurecr.io"]
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_private_endpoint_application_security_group_association" "app" {
+  private_endpoint_id           = azurerm_private_endpoint.app.id
+  application_security_group_id = azurerm_application_security_group.asg[2].id
+}
+
+resource "azurerm_private_endpoint_application_security_group_association" "kv" {
+  private_endpoint_id           = azurerm_private_endpoint.kv.id
+  application_security_group_id = azurerm_application_security_group.asg[2].id
+}
+
+resource "azurerm_private_endpoint_application_security_group_association" "sa" {
+  private_endpoint_id           = azurerm_private_endpoint.sa.id
+  application_security_group_id = azurerm_application_security_group.asg[2].id
+}
+
+resource "azurerm_private_endpoint_application_security_group_association" "redis" {
+  private_endpoint_id           = azurerm_private_endpoint.redis.id
+  application_security_group_id = azurerm_application_security_group.asg[2].id
+}
+
+resource "azurerm_private_endpoint_application_security_group_association" "acr" {
+  private_endpoint_id           = azurerm_private_endpoint.acr.id
+  application_security_group_id = azurerm_application_security_group.asg[2].id
+}
