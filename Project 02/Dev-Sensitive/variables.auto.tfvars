@@ -43,9 +43,9 @@ iam_rbac_role = "Reader"
 # iam_rbac_member          = ""
 iam_rbac_member_id       = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"]
 iam_rbac_group_owner     = "00000000-0000-0000-0000-000000000000"
-group_rbac_change_record = "CHG0032334"
+group_rbac_change_record = "CHG"
 
-mysql_admin    = "mysql_admin"
+mysql_admin    = "<user>"
 mysql_password = "<pass>"
 
 nsg_map_pe = {

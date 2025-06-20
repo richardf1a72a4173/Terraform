@@ -2,9 +2,9 @@
 
 subscription_id = "00000000-0000-0000-0000-000000000000"
 environment_tag = "Prod"
-project_tag     = "ptpirr"
-app_name        = "PTP-IRR Dev"
-project_code    = "P531"
+project_tag     = "project02"
+app_name        = "project02 Dev"
+project_code    = "02"
 
 confidentiality = "Highly Confidential"
 country_tag     = "eu"
@@ -19,15 +19,15 @@ snet_subnets = ["10.201.10.0/27", "10.201.10.32/27", "10.201.10.64/27", "10.201.
 iam_rbac_role            = "Reader"
 iam_rbac_member_id       = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"]
 iam_rbac_group_owner     = "00000000-0000-0000-0000-000000000000"
-group_rbac_change_record = "CHG32930"
+group_rbac_change_record = "CHG"
 
-dev_ip = "91.183.80.34"
+dev_ip = ""
 
-mysql_admin    = "mysql_admin"
-mysql_password = "x4uBGh!A386eW7Qzfn2VYq"
+mysql_admin    = "<user>"
+mysql_password = "<pass>"
 
-http_hostname   = "ptpscheme.com"
-http_hostname_2 = "proficiencypulse.ptpscheme.com"
+http_hostname   = "project02.com"
+http_hostname_2 = "project02.<domain>.com"
 
 waf_exclusions = {
   0 = {

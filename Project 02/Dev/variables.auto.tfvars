@@ -44,7 +44,7 @@ iam_rbac_member_id       = ["", "", ""]
 iam_rbac_group_owner     = "00000000-0000-0000-0000-000000000000"
 group_rbac_change_record = ""
 
-mysql_admin    = "mysql_admin"
+mysql_admin    = "<user>"
 mysql_password = "<pass>"
 
 nsg_map_pe = {
