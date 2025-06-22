@@ -22,8 +22,8 @@ resource "azurerm_container_group" "container" {
       ARM_SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
       ARM_TENANT_ID       = data.azurerm_client_config.current.tenant_id
       ARM_CLIENT_ID       = "00000000-0000-0000-0000-000000000000"
-      TERRAFORM_PROJECT   = "PTP-Prod"
-      PROJECT_PATH        = "Projects/531-PTP-IRR/Prod-Private/Prod/"
+      TERRAFORM_PROJECT   = "Project 02"
+      PROJECT_PATH        = "Project 02/Prod/"
     }
 
     secure_environment_variables = {
